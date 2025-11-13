@@ -7,18 +7,29 @@ const PRODUCTS = {
 function getBasket() {
   try {
     const basket = localStorage.getItem("basket");
-    if (!basket) return [];
+    if (!basket) return {};
     const parsed = JSON.parse(basket);
-    return Array.isArray(parsed) ? parsed : [];
+    // Handle backward compatibility: convert old array format to new object format
+    if (Array.isArray(parsed)) {
+      const basketObj = {};
+      parsed.forEach((product) => {
+        basketObj[product] = (basketObj[product] || 0) + 1;
+      });
+      // Save the converted format
+      localStorage.setItem("basket", JSON.stringify(basketObj));
+      return basketObj;
+    }
+    return typeof parsed === "object" && parsed !== null ? parsed : {};
   } catch (error) {
     console.warn("Error parsing basket from localStorage:", error);
-    return [];
+    return {};
   }
 }
 
 function addToBasket(product) {
   const basket = getBasket();
-  basket.push(product);
+  // Increment quantity if product exists, otherwise set to 1
+  basket[product] = (basket[product] || 0) + 1;
   localStorage.setItem("basket", JSON.stringify(basket));
 }
 
@@ -32,16 +43,18 @@ function renderBasket() {
   const cartButtonsRow = document.querySelector(".cart-buttons-row");
   if (!basketList) return;
   basketList.innerHTML = "";
-  if (basket.length === 0) {
+  const basketKeys = Object.keys(basket);
+  if (basketKeys.length === 0) {
     basketList.innerHTML = "<li>No products in basket.</li>";
     if (cartButtonsRow) cartButtonsRow.style.display = "none";
     return;
   }
-  basket.forEach((product) => {
-    const item = PRODUCTS[product];
-    if (item) {
+  basketKeys.forEach((productKey) => {
+    const quantity = basket[productKey];
+    const item = PRODUCTS[productKey];
+    if (item && quantity > 0) {
       const li = document.createElement("li");
-      li.innerHTML = `<span class='basket-emoji'>${item.emoji}</span> <span>${item.name}</span>`;
+      li.innerHTML = `<span class='basket-emoji'>${item.emoji}</span> <span>${quantity}x ${item.name}</span>`;
       basketList.appendChild(li);
     }
   });
@@ -58,8 +71,10 @@ function renderBasketIndicator() {
     indicator.className = "basket-indicator";
     basketLink.appendChild(indicator);
   }
-  if (basket.length > 0) {
-    indicator.textContent = basket.length;
+  // Sum up all quantities in the basket
+  const totalItems = Object.values(basket).reduce((sum, quantity) => sum + quantity, 0);
+  if (totalItems > 0) {
+    indicator.textContent = totalItems;
     indicator.style.display = "flex";
   } else {
     indicator.style.display = "none";
