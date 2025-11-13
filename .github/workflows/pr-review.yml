@@ -7,14 +7,14 @@ on:
 jobs:
   pr-review:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Create Workflow Run
       id: create-run
       run: |
         response=$(curl -s -X POST \
           -H "Content-Type: application/json" \
-          "https://ai-mastra-agent-workshop.vercel.app/api/workflows/prWorkflow/create-run")
+          "https://demo-webshop-ekpf.vercel.app/api/workflows/prWorkflow/create-run")
         
         echo "Create run response: $response"
         
@@ -52,7 +52,7 @@ jobs:
         response=$(curl -s -X POST \
           -H "Content-Type: application/json" \
           -d "$payload" \
-          "https://ai-mastra-agent-workshop.vercel.app/api/workflows/prWorkflow/start-async?runId=$runId")
+          "https://demo-webshop-ekpf.vercel.app/api/workflows/prWorkflow/start-async?runId=$runId")
         
         echo "Start workflow response: $response"
         
