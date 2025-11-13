@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fruit Slot Machine - Fruit Shop</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .slot-reel {
+        font-size: 4rem;
+        width: 6rem;
+        height: 6rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 3px solid #333;
+        border-radius: 8px;
+        margin: 1rem auto;
+        background: #fff;
+      }
+      .slot-container {
+        text-align: center;
+      }
+      .spin-note {
+        font-size: 0.9rem;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <header role="banner">
+      <div class="header-center">
+        <a href="index.html" class="logo" aria-label="Go to homepage">
+          <img
+            src="img/fruit-shop-logo.png"
+            class="logo-img"
+            alt="Fruit Shop Logo"
+          />
+          <span class="products-text"> View Products </span>
+        </a>
+        <nav role="navigation" aria-label="Main navigation">
+          <a
+            href="basket.html"
+            class="basket-link"
+            aria-label="View shopping basket"
+          >
+            <img
+              src="img/basket-icon.png"
+              class="basket-img"
+              alt="Shopping basket icon"
+            />
+            <span class="basket-text">View shopping basket</span>
+          </a>
+        </nav>
+      </div>
+    </header>
+    <main id="main-content" role="main">
+      <div class="content-box slot-container">
+        <div class="emoji-display" role="img" aria-label="Slot machine emoji">🎰</div>
+        <h1>Fruit Slot Machine</h1>
+        <div id="slotReel" class="slot-reel" aria-live="polite">🍏</div>
+        <div class="product-desc" aria-label="Slot description">
+          Spin the wheel and let fate (and fruit) decide what gets added to your basket.
+        </div>
+        <div class="button-container">
+          <button
+            id="addToBasket"
+            class="cart-action-btn"
+            aria-label="Spin slot and add random fruit to basket"
+          >
+            Spin & Add to Basket
+          </button>
+        </div>
+        <div class="spin-note">Click to spin. The slot will pick a random fruit to add to your basket.</div>
+      </div>
+    </main>
+    <footer>
+      <a
+        href="https://www.linkedin.com/in/timlolkema/"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        By Tim Lolkema
+      </a>
+    </footer>
+    <script src="shop.js"></script>
+    <script>
+      (function () {
+        const reel = document.getElementById('slotReel');
+        const spinBtn = document.getElementById('addToBasket');
+
+        // Derive available product keys from PRODUCTS global
+        function getProductKeys() {
+          return Object.keys(PRODUCTS);
+        }
+
+        function randomChoice(arr) {
+          return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        function spinAnimation(keys, duration = 1200) {
+          return new Promise((resolve) => {
+            const start = Date.now();
+            let rafId;
+
+            function frame() {
+              const elapsed = Date.now() - start;
+              // speed multiplier, slows down towards the end
+              const t = Math.min(1, elapsed / duration);
+              // pick a random key for this frame
+              const key = keys[Math.floor(Math.random() * keys.length)];
+              reel.textContent = PRODUCTS[key].emoji;
+
+              if (t < 1) {
+                rafId = requestAnimationFrame(frame);
+              } else {
+                cancelAnimationFrame(rafId);
+                // final selection
+                const final = randomChoice(keys);
+                reel.textContent = PRODUCTS[final].emoji;
+                resolve(final);
+              }
+            }
+
+            frame();
+          });
+        }
+
+        spinBtn.addEventListener('click', async function () {
+          spinBtn.disabled = true;
+          const keys = getProductKeys();
+          // Run the spin animation which resolves with the selected key
+          try {
+            const selected = await spinAnimation(keys, 1200);
+            // Use the global addToBasket - it already enforces strawberry/banana incompatibility
+            addToBasket(selected);
+            // small visual feedback: brief highlight
+            reel.style.boxShadow = '0 0 10px rgba(0,0,0,0.2)';
+            setTimeout(() => { reel.style.boxShadow = ''; }, 400);
+          } finally {
+            spinBtn.disabled = false;
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
+
